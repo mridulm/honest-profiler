@@ -13,6 +13,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipTests>false</skipTests>
+        <shaded_output_jar>${project.build.directory}/honest-profiler.jar</shaded_output_jar>
     </properties>
 
     <dependencies>
@@ -32,6 +33,12 @@
             <groupId>org.webbitserver</groupId>
             <artifactId>webbit</artifactId>
             <version>0.4.15</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -40,9 +47,10 @@
             <version>2.6.7</version>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.1.8</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.21</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>args4j</groupId>
@@ -84,40 +92,94 @@
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+          <!-- Use the shade plugin to create a big JAR with all the dependencies -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.1.1</version>
+            <configuration>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <outputFile>${shaded_output_jar}</outputFile>
+              <artifactSet>
+                <includes>
+                  <include>*:*</include>
+                </includes>
+              </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <relocations>
+                <relocation>
+                  <pattern>org.picocontainer</pattern>
+                  <!-- Using '_' instead of '-' on purpose to prevent class load issues -->
+                  <shadedPattern>com.insightfullogic.honest_profiler_picocontainer</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.webbitserver</pattern>
+                  <!-- Using '_' instead of '-' on purpose to prevent class load issues -->
+                  <shadedPattern>com.insightfullogic.honest_profiler_webbitserver</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.fasterxml</pattern>
+                  <!-- Using '_' instead of '-' on purpose to prevent class load issues -->
+                  <shadedPattern>com.insightfullogic.honest_profiler_fasterxml</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.kohsuke.args4j</pattern>
+                  <!-- Using '_' instead of '-' on purpose to prevent class load issues -->
+                  <shadedPattern>com.insightfullogic.honest_profiler_args4j</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.fusesource</pattern>
+                  <!-- Using '_' instead of '-' on purpose to prevent class load issues -->
+                  <shadedPattern>com.insightfullogic.honest_profiler_fusesource</shadedPattern>
+                </relocation>
+
+              </relocations>
+              <transformers>
+                <transformer implementation= "org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+              <finalName>honest-profiler</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
+            </configuration>
+            <executions>
+              <execution>
+                <id>zip-file</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
                 <configuration>
-                    <finalName>honest-profiler</finalName>
-                    <appendAssemblyId>false</appendAssemblyId>
+                  <descriptors>
+                    <descriptor>src/assembly/zip.xml</descriptor>
+                  </descriptors>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>jar-file</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>zip-file</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/assembly/zip.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
@@ -153,6 +215,7 @@
 			    	<argLine>-Duser.country=US -Duser.language=en -Dheadless=true</argLine>
 			    </configuration>
 			</plugin>
+
         </plugins>
         <resources>
             <resource>

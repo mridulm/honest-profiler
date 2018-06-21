@@ -103,7 +103,7 @@ set(GLOBAL_WARNINGS "-Wall -Wformat-security -Wno-char-subscripts")
 set(GLOBAL_WARNINGS "${GLOBAL_WARNINGS} -Wno-sign-compare -Wno-strict-overflow -Wwrite-strings")
 set(GLOBAL_WARNINGS "${GLOBAL_WARNINGS} -Wnon-virtual-dtor -Woverloaded-virtual")
 
-set(GLOBAL_COPTS "-fdiagnostics-show-option -fno-omit-frame-pointer -fno-strict-aliasing")
+set(GLOBAL_COPTS "-fdiagnostics-show-option -fno-omit-frame-pointer -fno-strict-aliasing -fPIC")
 set(GLOBAL_COPTS "${GLOBAL_COPTS} -funsigned-char -fno-asynchronous-unwind-tables -g -D__STDC_FORMAT_MACROS -O2")
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
     set(GLOBAL_COPTS "${GLOBAL_COPTS} -msse2")
